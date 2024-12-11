@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  
+  FriendlyStackName:
+    Description: Friendly stack name for better naming conventions
+    Type: String
+    Default: "testrdscluster"
+    
+  VPCId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /app/network/VPCId
+
+  Subnet1:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /app/network/Sub1Id
+
+  Subnet2:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /app/network/Sub1Id
+
+  Subnet3:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /app/network/Sub1Id
+  
+  DBEnginerVersion:
+    Type: String
+    Default: '12.14'
+
+  Username:
+    Type: String
+    Default: 'adminra'
+  
+  Password:
+    Type: String
+    Default: 'adminra123456'
+
+  DBName:
+    Type: String
+    Default: 'testclusterrds'
+    Description: 'The name of the cluster'
+  
+  AllocatedStorageSize:
+    Description: 'The size required for the RDS cluster'
+    Type: String
+    Default: '100'
+
+  MinorVersionUpgrade:
+    Description: 'Allow minor version upgrade'
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+Resources:
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Managed DB subnetgroup
+      DBSubnetGroupName: !Sub ${FriendlyStackName}-rds-subnet-group
+      SubnetIds: 
+       - !Ref Subnet1
+       - !Ref Subnet2
+       - !Ref Subnet3
+       - subnet-07befd3356ea122e1
+    
+  RDSAuroraDBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+        AutoMinorVersionUpgrade: !Ref MinorVersionUpgrade
+        DBSubnetGroupName: !Ref DBSubnetGroup
+        Engine: 'aurora-postgresql'
+        EngineVersion: !Ref DBEnginerVersion
+        EngineMode: 'provisioned'
+        DatabaseName: !Ref DBName
+        Port: 5432
+        MasterUsername: !Ref Username
+        MasterUserPassword: !Ref Password
+
+  DBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.r5.large
+      Engine: 'aurora-postgresql'
+      EngineVersion: !Ref DBEnginerVersion
+      DBClusterIdentifier: !Ref RDSAuroraDBCluster
+      # AllocatedStorage: 100 # Allocated storage in GB (not needed for Aurora)
+      PubliclyAccessible: false
+      AutoMinorVersionUpgrade: !Ref MinorVersionUpgrade
+      DBSubnetGroupName: !Ref DBSubnetGroup
+
+  DBInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.r5.large
+      Engine: 'aurora-postgresql'
+      EngineVersion: !Ref DBEnginerVersion
+      DBClusterIdentifier: !Ref RDSAuroraDBCluster
+      # AllocatedStorage: 100 # Allocated storage in GB (not needed for Aurora)
+      PubliclyAccessible: false
+      AutoMinorVersionUpgrade: !Ref MinorVersionUpgrade
+      DBSubnetGroupName: !Ref DBSubnetGroup
+  
+  DBInstance3:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.r5.large
+      Engine: 'aurora-postgresql'
+      EngineVersion: !Ref DBEnginerVersion
+      DBClusterIdentifier: !Ref RDSAuroraDBCluster
+      # AllocatedStorage: 100 # Allocated storage in GB (not needed for Aurora)
+      PubliclyAccessible: false
+      AutoMinorVersionUpgrade: !Ref MinorVersionUpgrade
+      DBSubnetGroupName: !Ref DBSubnetGroup
+  
+  
+  
+  
+  

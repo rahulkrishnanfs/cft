@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation Template for OpenSearch Service with Index Creation
+
+Parameters:
+  InstanceType:
+    Description: Instance Type for OpenSearch Cluster
+    Type: String
+    Default: m5.large.search
+
+  InstanceCount:
+    Description: Number of Instances for OpenSearch Cluster
+    Type: Number
+    Default: 2
+  
+  OSUsername:
+    Description: Username of the OS Admin
+    Type: String
+    Default: admin
+  
+  OSPassword:
+    Description: Password of the OS Admin
+    Type: String
+    Default: Rahul1234567**
+  
+  OSDomainName:
+    Description: Domain name for OpenSearch
+    Type: String
+    Default: opensearch-haystack-domain 
+
+
+Resources:
+  OpenSearchDomain:
+    Type: 'AWS::OpenSearchService::Domain'
+    Properties:
+      DomainName: !Ref OSDomainName
+      EngineVersion: 'OpenSearch_2.5'
+      ClusterConfig:
+        InstanceType: !Ref InstanceType
+        InstanceCount: !Ref InstanceCount
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions: 
+          MasterUserName: !Ref OSUsername
+          MasterUserPassword: !Ref OSPassword
+      EncryptionAtRestOptions: 
+          Enabled: true
+      NodeToNodeEncryptionOptions:
+          Enabled: true
+      DomainEndpointOptions:
+          EnforceHTTPS: true
+      EBSOptions:
+        EBSEnabled: true
+        VolumeType: gp2
+        VolumeSize: 10
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: 'es:*'
+            Resource: '*'
+
+  # IndexCreationLambdaRole:
+  #   Type: 'AWS::IAM::Role'
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #           Action: sts:AssumeRole
+  #     Policies:
+  #       - PolicyName: OpenSearchAccessPolicy
+  #         PolicyDocument:
+  #           Version: '2012-10-17'
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: 
+  #                 - es:ESHttpPut
+  #                 - es:ESHttpPost
+  #               Resource: '*'
+
+  # IndexCreationLambda:
+  #   Type: 'AWS::Lambda::Function'
+  #   Properties: 
+  #     Runtime: python3.9
+  #     Handler: index_creator.lambda_handler
+  #     Role: !GetAtt IndexCreationLambdaRole.Arn
+  #     Code:
+  #       ZipFile: |
+  #         import json
+  #         import requests
+  #         import os
+
+  #         def lambda_handler(event, context):
+  #             endpoint = event['OpenSearchEndpoint']
+  #             indices = json.loads(event['IndicesConfig'])
+  #             username = event['OSUsername']
+  #             password = event['OSPassword']
+
+  #             headers = {
+  #                 "Content-Type": "application/json"
+  #             }
+              
+  #             for index in indices:
+  #                 url = f"https://{endpoint}/{index['name']}"
+  #                 response = requests.put(url, auth=(username, password), headers=headers)
+  #                 print(f"Created index {index['name']}: {response.status_code} - {response.text}")
+              
+  #             return {
+  #                 "statusCode": 200,
+  #                 "body": "Indices created successfully"
+  #             }
+
+  # CustomResource:
+  #   Type: 'Custom::IndexCreation'
+  #   Properties: 
+  #     ServiceToken: !GetAtt IndexCreationLambda.Arn
+  #     OpenSearchEndpoint: !Sub ${OpenSearchDomain.DomainEndpoint}
+  #     IndicesConfig: !Ref IndicesConfig
+  #     OSUsername: !Ref OSUsername
+  #     OSPassword: !Ref OSPassword
